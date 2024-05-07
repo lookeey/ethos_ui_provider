@@ -30,4 +30,26 @@ contract AggregatorForkTest is Test {
             console.log("");
         }
     }
+
+    function test_aureliusUser() public {
+        vm.createSelectFork('mantle');
+        aggregator = new EthosDataAggregator(
+            0x93A98b20b159cDb8fB2e899D6f5b35371782FaD3,
+            0xbeb31b7AB58e1F38b9A99406571c2cd69a23Cf41,
+            0x52874ef3Fcc4F8237A7505E2A25b0146440C782e,
+            0x295c6074F090f85819cbC911266522e43A8e0f4A
+        );
+
+        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(0x31DDDf4E2ac81403FA9b993CfBE4CA535a1656b5);
+
+        console.log("User Data:");
+        for (uint i = 0; i < userData.length; i++) {
+            console.log("Collateral %s", i);
+            console.log("Trove Status: %s", userData[i].troveStatus);
+            console.log("Trove Debt: %s", userData[i].troveDebt);
+            console.log("Trove Collateral Deposited: %s", userData[i].troveCollDeposited);
+            console.log("Claimable Collateral: %s", userData[i].claimableColl);
+            console.log("");
+        }
+    } 
 }
