@@ -16,7 +16,7 @@ contract AggregatorForkTest is Test {
             0x295c6074F090f85819cbC911266522e43A8e0f4A
         );
 
-        (EthosDataAggregator.CollData[] memory collData,) = aggregator.getGlobalData();
+        (EthosDataAggregator.GlobalData memory globalData, EthosDataAggregator.CollData[] memory collData) = aggregator.getGlobalData();
 
         console.log("Collateral Data:");
         for (uint i = 0; i < collData.length; i++) {
@@ -29,6 +29,11 @@ contract AggregatorForkTest is Test {
             console.log("Entire System Debt: %s", collData[i].entireSystemDebt);
             console.log("");
         }
+
+        console.log("Global Data:");
+        console.log("Liquidation Reserve: %s", globalData.liquidationReserve);
+        console.log("Min Net Debt: %s", globalData.minNetDebt);
+        console.log("Borrowing Rate: %s", globalData.borrowingRate);
     }
 
     function test_aureliusUser() public {

@@ -47,7 +47,7 @@ contract EthosDataAggregator {
         troveManager = ITroveManager(_troveManager);
     }
 
-    function getGlobalData() external view returns (CollData[] memory, GlobalData memory) {
+    function getGlobalData() external view returns (GlobalData memory, CollData[] memory) {
         address[] memory collAddrs = collateralConfig.getAllowedCollaterals();
         return _getGlobalData(collAddrs);
     }
@@ -57,7 +57,7 @@ contract EthosDataAggregator {
         return _getUserData(_user, collAddrs);
     }
 
-    function _getGlobalData(address[] memory collAddrs) internal view returns (CollData[] memory, GlobalData memory) {
+    function _getGlobalData(address[] memory collAddrs) internal view returns (GlobalData memory, CollData[] memory) {
         CollData[] memory collateralData = new CollData[](collAddrs.length);
         for (uint i = 0; i < collAddrs.length; i++) {
             address collAddr = collAddrs[i];
@@ -80,7 +80,7 @@ contract EthosDataAggregator {
             borrowingRate: troveManager.getBorrowingRateWithDecay()
         });
 
-        return (collateralData, globalData);
+        return (globalData, collateralData);
     }
 
     function _getUserData(address _user, address[] memory collAddrs) internal view returns (UserCollData[] memory) {
