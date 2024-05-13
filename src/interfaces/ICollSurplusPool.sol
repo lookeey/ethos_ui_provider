@@ -33,4 +33,6 @@ interface ICollSurplusPool {
     function claimColl(address _account, address _collateral) external;
 
     function pullCollateralFromActivePool(address _collateral, uint _amount) external;
+
+    function activePoolAddress() external view returns (address);
 }

@@ -5,27 +5,39 @@ import {Script, console} from "forge-std/Script.sol";
 import {EthosDataAggregator} from "../src/EthosDataAggregator.sol";
 
 contract DeployScript is Script {
-    function setUp() public {}
+    struct Config {
+        string chain;
+        address collSurplusPool;
+        address collateralConfig;
+        address priceFeed;
+        address troveManager;
+        address user;
+    }
+
+    string configs;
+
+    function setUp() public {
+        configs = vm.readFile("./test/deployments.json");
+    }
 
     function run(
-        address _priceFeed,
-        address _collateralConfig,
-        address _collSurplusPool,
-        address _troveManager
+        string memory deployment
     ) public {
+        Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
+
         vm.broadcast();
 
         console.log("Deploying EthosDataAggregator with the following addresses:");
-        console.log("PriceFeed: %s", _priceFeed);
-        console.log("CollateralConfig: %s", _collateralConfig);
-        console.log("CollSurplusPool: %s", _collSurplusPool);
-        console.log("TroveManager: %s", _troveManager);
+        console.log("PriceFeed: %s", cfg.priceFeed);
+        console.log("CollateralConfig: %s", cfg.collateralConfig);
+        console.log("CollSurplusPool: %s", cfg.collSurplusPool);
+        console.log("TroveManager: %s", cfg.troveManager);
 
         EthosDataAggregator aggregator = new EthosDataAggregator(
-            _priceFeed,
-            _collateralConfig,
-            _collSurplusPool,
-            _troveManager
+            cfg.priceFeed,
+            cfg.collateralConfig,
+            cfg.collSurplusPool,
+            cfg.troveManager
         );
 
         console.log("Aggregator deployed at: %s", address(aggregator));

@@ -1,0 +1,34 @@
+{
+    "aurelius": {
+        "chain": "mantle",
+        "collSurplusPool": "0x52874ef3Fcc4F8237A7505E2A25b0146440C782e",
+        "collateralConfig": "0xbeb31b7AB58e1F38b9A99406571c2cd69a23Cf41",
+        "priceFeed": "0x93A98b20b159cDb8fB2e899D6f5b35371782FaD3",
+        "troveManager": "0x295c6074F090f85819cbC911266522e43A8e0f4A",
+        "user": "0x0"
+    },
+    "ethosV1": {
+        "chain": "optimism",
+        "collSurplusPool": "0x00D8f80D35de57cC12Efb3A5D7d09Fe26Da346d9",
+        "collateralConfig": "0x236931e351d8b7cc9686E9b9AdfeA630B05B6062",
+        "priceFeed": "0xC6b3Eea38Cbe0123202650fB49c59ec41a406427",
+        "troveManager": "0xd584A5E956106DB2fE74d56A0B14a9d64BE8DC93",
+        "user": "0x0"
+    },
+    "ethosV2": {
+        "chain": "optimism",
+        "collSurplusPool": "0x4aB8A9A89578f4907b48a6a2DfC0f766dBC0C01b",
+        "collateralConfig": "0xB1623a029033ecd5C91a62FF734f1c7F07A26e52",
+        "priceFeed": "0x9cC5bDdF2Cc8C38332c2e71e08cf21308C8422EF",
+        "troveManager": "0x06cbD15D58069193717486CFDe37Ebf5Ec72a8A6",
+        "user": "0x0"
+    },
+    "ethosV2-1": {
+        "chain": "optimism",
+        "collSurplusPool": "0xEe9C13e27D8A60671cB3E7EF351ffd8aDdb670FB",
+        "collateralConfig": "0xA2f01800Bd6d878b82E6009a7022fa9B1cDC810c",
+        "priceFeed": "0xadd6F326a395629926D9a535d809B5e3d8c7FE8d",
+        "troveManager": "0x75C72F459f2054B46ceFD6D10eC99d0fbd777F05",
+        "user": "0x8Df967d6dCc41e1bf7f3F56204CeCA6f96001657"
+    }
+}

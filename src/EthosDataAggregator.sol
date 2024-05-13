@@ -6,6 +6,9 @@ import {ICollateralConfig} from "./interfaces/ICollateralConfig.sol";
 import {ICollSurplusPool} from "./interfaces/ICollSurplusPool.sol";
 import {ITroveManager} from "./interfaces/ITroveManager.sol";
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
+import {IActivePool} from "./interfaces/IActivePool.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
+import {console} from "forge-std/console.sol";
 
 contract EthosDataAggregator {
     IPriceFeed public immutable priceFeed;
@@ -14,12 +17,15 @@ contract EthosDataAggregator {
     ITroveManager public immutable troveManager;
 
     struct CollData {
+        address collateral;
         uint minCollateralRatio;
         uint criticalCollateralRatio;
         uint price;
         uint totalCollateralRatio;
         uint entireSystemCollateral;
         uint entireSystemDebt;
+        uint decimals;
+        address yieldGenerator;
     }
 
     struct GlobalData {
@@ -29,6 +35,7 @@ contract EthosDataAggregator {
     }
 
     struct UserCollData {
+        address collateral;
         uint troveStatus;
         uint troveDebt;
         uint troveCollDeposited;
@@ -61,16 +68,20 @@ contract EthosDataAggregator {
         CollData[] memory collateralData = new CollData[](collAddrs.length);
         for (uint i = 0; i < collAddrs.length; i++) {
             address collAddr = collAddrs[i];
-            IAggregatorV3 priceAggregator = priceFeed.priceAggregator(collAddr);
-            (,int price,,,) = priceAggregator.latestRoundData();
+            int price = tryFetchPrice(collAddr);
+            console.log("test");
+            IActivePool activePool = IActivePool(collSurplusPool.activePoolAddress());
 
             collateralData[i] = CollData({
+                collateral: collAddr,
                 minCollateralRatio: collateralConfig.getCollateralMCR(collAddr),
                 criticalCollateralRatio: collateralConfig.getCollateralCCR(collAddr),
                 price: uint(price),
                 totalCollateralRatio: troveManager.getTCR(collAddr, uint(price)),
                 entireSystemCollateral: troveManager.getEntireSystemColl(collAddr),
-                entireSystemDebt: troveManager.getEntireSystemDebt(collAddr)
+                entireSystemDebt: troveManager.getEntireSystemDebt(collAddr),
+                yieldGenerator: activePool.yieldGenerator(collAddr),
+                decimals: collateralConfig.getCollateralDecimals(collAddr)
             });
         }
 
@@ -88,6 +99,7 @@ contract EthosDataAggregator {
         for (uint i = 0; i < collAddrs.length; i++) {
             address collAddr = collAddrs[i];
             userCollData[i] = UserCollData({
+                collateral: collAddr,
                 troveStatus: troveManager.getTroveStatus(_user, collAddr),
                 troveDebt: troveManager.getTroveDebt(_user, collAddr),
                 troveCollDeposited: troveManager.getTroveColl(_user, collAddr),
@@ -95,5 +107,16 @@ contract EthosDataAggregator {
             });
         }
         return userCollData;
+    }
+
+    function tryFetchPrice(address _collateral) internal view returns (int price) {
+        IAggregatorV3 priceAggregator = priceFeed.priceAggregator(_collateral);
+        (bool success, bytes memory data) = address(priceAggregator).staticcall(abi.encodeWithSelector(priceAggregator.latestAnswer.selector));
+        if (success) {
+            (price) = abi.decode(data, (int));
+            return price * 10 ** 10;
+        }
+        (, price,,,) = priceAggregator.latestRoundData();
+        return price * 10 ** 10;
     }
 }

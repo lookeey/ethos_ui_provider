@@ -7,20 +7,32 @@ import {EthosDataAggregator} from "src/EthosDataAggregator.sol";
 contract AggregatorForkTest is Test {
     EthosDataAggregator aggregator;
 
-    function test_aurelius() public {
-        vm.createSelectFork('mantle');
-        aggregator = new EthosDataAggregator(
-            0x93A98b20b159cDb8fB2e899D6f5b35371782FaD3,
-            0xbeb31b7AB58e1F38b9A99406571c2cd69a23Cf41,
-            0x52874ef3Fcc4F8237A7505E2A25b0146440C782e,
-            0x295c6074F090f85819cbC911266522e43A8e0f4A
-        );
+    string configs;
 
-        (EthosDataAggregator.GlobalData memory globalData, EthosDataAggregator.CollData[] memory collData) = aggregator.getGlobalData();
+    struct Config {
+        string chain;
+        address collSurplusPool;
+        address collateralConfig;
+        address priceFeed;
+        address troveManager;
+        address user;
+    }
+
+    function setUp() public {
+        configs = vm.readFile("./test/deployments.json");
+    }
+
+    function getGlobalData(string memory deployment) internal {
+        Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
+
+        aggregator = new EthosDataAggregator(cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager);
+
+        (EthosDataAggregator.GlobalData memory globalData, EthosDataAggregator.CollData[] memory collData) =
+            aggregator.getGlobalData();
 
         console.log("Collateral Data:");
-        for (uint i = 0; i < collData.length; i++) {
-            console.log("Collateral %s", i);
+        for (uint256 i = 0; i < collData.length; i++) {
+            console.log("Collateral %s", collData[i].collateral);
             console.log("Min Collateral Ratio: %s", collData[i].minCollateralRatio);
             console.log("Critical Collateral Ratio: %s", collData[i].criticalCollateralRatio);
             console.log("Price: %s", collData[i].price);
@@ -36,25 +48,43 @@ contract AggregatorForkTest is Test {
         console.log("Borrowing Rate: %s", globalData.borrowingRate);
     }
 
-    function test_aureliusUser() public {
-        vm.createSelectFork('mantle');
-        aggregator = new EthosDataAggregator(
-            0x93A98b20b159cDb8fB2e899D6f5b35371782FaD3,
-            0xbeb31b7AB58e1F38b9A99406571c2cd69a23Cf41,
-            0x52874ef3Fcc4F8237A7505E2A25b0146440C782e,
-            0x295c6074F090f85819cbC911266522e43A8e0f4A
-        );
+    function getUserData(string memory deployment) internal {
+        Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
 
-        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(0x31DDDf4E2ac81403FA9b993CfBE4CA535a1656b5);
+        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(cfg.user);
 
         console.log("User Data:");
-        for (uint i = 0; i < userData.length; i++) {
-            console.log("Collateral %s", i);
+        for (uint256 i = 0; i < userData.length; i++) {
+            console.log("Collateral %s", userData[i].collateral);
             console.log("Trove Status: %s", userData[i].troveStatus);
             console.log("Trove Debt: %s", userData[i].troveDebt);
             console.log("Trove Collateral Deposited: %s", userData[i].troveCollDeposited);
             console.log("Claimable Collateral: %s", userData[i].claimableColl);
             console.log("");
         }
-    } 
+    }
+
+    function test_aurelius() public {
+        vm.createSelectFork("mantle");
+        getGlobalData(".aurelius");
+        getUserData(".aurelius");
+    }
+
+    function test_ethosv1() public {
+        vm.createSelectFork("optimism");
+        getGlobalData(".ethosV1");
+        getUserData(".ethosV1");
+    }
+
+    function test_ethosv2() public {
+        vm.createSelectFork("optimism");
+        getGlobalData(".ethosV2");
+        getUserData(".ethosV2");
+    }
+
+    function test_ethosv2_1() public {
+        vm.createSelectFork("optimism");
+        getGlobalData(".ethosV2-1");
+        getUserData(".ethosV2-1");
+    }
 }

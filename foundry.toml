@@ -2,7 +2,8 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+fs_permissions = [{ access = "read", path = "./"}]
 
-rpc_endpoints = { mantle = "https://rpc.ankr.com/mantle", optimism = "https://optimism.llamarpc.com" }
+rpc_endpoints = { mantle = "https://rpc.ankr.com/mantle", optimism = "https://go.getblock.io/bec4b0dd7017435c8880f2cae8ea2d4d" }
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
