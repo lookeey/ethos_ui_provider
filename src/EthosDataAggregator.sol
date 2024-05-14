@@ -29,6 +29,7 @@ contract EthosDataAggregator is Ownable {
         uint entireSystemCollateral;
         uint entireSystemDebt;
         uint decimals;
+        uint priceDecimals;
         address yieldGenerator;
     }
 
@@ -70,16 +71,23 @@ contract EthosDataAggregator is Ownable {
             (int price, uint priceDecimals) = tryFetchPrice(collAddr, priceFeed);
             IActivePool activePool = IActivePool(collSurplusPool.activePoolAddress());
 
+            uint fixedDecimalsPrice;
+            if (priceDecimals > 18) {
+                fixedDecimalsPrice = uint(price) / (10 ** (priceDecimals - 18));
+            } else {
+                fixedDecimalsPrice = uint(price) * (10 ** (18 - priceDecimals));
+            }
+
             collateralData[i] = CollData({
                 collateral: collAddr,
                 minCollateralRatio: collateralConfig.getCollateralMCR(collAddr),
                 criticalCollateralRatio: collateralConfig.getCollateralCCR(collAddr),
-                price: uint(price),
+                price: uint(fixedDecimalsPrice),
                 totalCollateralRatio: troveManager.getTCR(collAddr, uint(price)),
                 entireSystemCollateral: troveManager.getEntireSystemColl(collAddr),
                 entireSystemDebt: troveManager.getEntireSystemDebt(collAddr),
                 yieldGenerator: activePool.yieldGenerator(collAddr),
-                priceDecimals: aggrDecimals,
+                priceDecimals: priceDecimals,
                 decimals: collateralConfig.getCollateralDecimals(collAddr)
             });
         }
@@ -121,9 +129,9 @@ contract EthosDataAggregator is Ownable {
         (bool success, bytes memory data) = address(priceAggregator).staticcall(abi.encodeWithSelector(priceAggregator.latestAnswer.selector));
         if (success) {
             (price) = abi.decode(data, (int));
-            return price * 10 ** 10;
+            return (price, aggrDecimals);
         }
         (, price,,,) = priceAggregator.latestRoundData();
-        return price * 10 ** 10;
+        return (price, aggrDecimals);
     }
 }
