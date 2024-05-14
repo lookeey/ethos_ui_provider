@@ -9,26 +9,25 @@ contract AggregatorForkTest is Test {
 
     string configs;
 
-    struct Config {
-        string chain;
-        address collSurplusPool;
-        address collateralConfig;
-        address priceFeed;
-        address troveManager;
-        address user;
-    }
-
     function setUp() public {
         configs = vm.readFile("./test/deployments.json");
     }
 
-    function getGlobalData(string memory deployment) internal {
-        Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
+    function getGlobalData(string memory deployment, uint version) internal {
+        // Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
 
-        aggregator = new EthosDataAggregator(cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager);
+        EthosDataAggregator.Addresses[] memory addresses = abi.decode(
+            vm.parseJson(configs, string.concat(deployment, ".versions")),
+            (EthosDataAggregator.Addresses[])
+        );
+
+        aggregator = new EthosDataAggregator(
+            /* cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager */
+            addresses
+        );
 
         (EthosDataAggregator.GlobalData memory globalData, EthosDataAggregator.CollData[] memory collData) =
-            aggregator.getGlobalData();
+            aggregator.getGlobalData(version);
 
         console.log("Collateral Data:");
         for (uint256 i = 0; i < collData.length; i++) {
@@ -48,10 +47,20 @@ contract AggregatorForkTest is Test {
         console.log("Borrowing Rate: %s", globalData.borrowingRate);
     }
 
-    function getUserData(string memory deployment) internal {
-        Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
+    function getUserData(string memory deployment, uint version) internal {
+        EthosDataAggregator.Addresses[] memory addresses = abi.decode(
+            vm.parseJson(configs, string.concat(deployment, ".versions")),
+            (EthosDataAggregator.Addresses[])
+        );
 
-        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(cfg.user);
+        aggregator = new EthosDataAggregator(
+            /* cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager */
+            addresses
+        );
+
+        address user = abi.decode(vm.parseJson(configs, string.concat(deployment, ".testUser")), (address));
+
+        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(user, version);
 
         console.log("User Data:");
         for (uint256 i = 0; i < userData.length; i++) {
@@ -66,25 +75,25 @@ contract AggregatorForkTest is Test {
 
     function test_aurelius() public {
         vm.createSelectFork("mantle");
-        getGlobalData(".aurelius");
-        getUserData(".aurelius");
+        getGlobalData(".aurelius", 0);
+        getUserData(".aurelius", 0);
     }
 
     function test_ethosv1() public {
         vm.createSelectFork("optimism");
-        getGlobalData(".ethosV1");
-        getUserData(".ethosV1");
+        getGlobalData(".ethos", 0);
+        getUserData(".ethos", 0);
     }
 
     function test_ethosv2() public {
         vm.createSelectFork("optimism");
-        getGlobalData(".ethosV2");
-        getUserData(".ethosV2");
+        getGlobalData(".ethos", 1);
+        getUserData(".ethos", 1);
     }
 
     function test_ethosv2_1() public {
         vm.createSelectFork("optimism");
-        getGlobalData(".ethosV2-1");
-        getUserData(".ethosV2-1");
+        getGlobalData(".ethos", 2);
+        getUserData(".ethos", 2);
     }
 }

@@ -5,15 +5,6 @@ import {Script, console} from "forge-std/Script.sol";
 import {EthosDataAggregator} from "../src/EthosDataAggregator.sol";
 
 contract DeployScript is Script {
-    struct Config {
-        string chain;
-        address collSurplusPool;
-        address collateralConfig;
-        address priceFeed;
-        address troveManager;
-        address user;
-    }
-
     string configs;
 
     function setUp() public {
@@ -23,21 +14,28 @@ contract DeployScript is Script {
     function run(
         string memory deployment
     ) public {
-        Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
+        EthosDataAggregator.Addresses[] memory addresses = abi.decode(
+            vm.parseJson(configs, string.concat(deployment, ".versions")),
+            (EthosDataAggregator.Addresses[])
+        );
 
         vm.broadcast();
 
         console.log("Deploying EthosDataAggregator with the following addresses:");
-        console.log("PriceFeed: %s", cfg.priceFeed);
+        /* console.log("PriceFeed: %s", cfg.priceFeed);
         console.log("CollateralConfig: %s", cfg.collateralConfig);
         console.log("CollSurplusPool: %s", cfg.collSurplusPool);
-        console.log("TroveManager: %s", cfg.troveManager);
+        console.log("TroveManager: %s", cfg.troveManager); */
+        for (uint256 i = 0; i < addresses.length; i++) {
+            console.log("Version: %s", i);
+            console.log("PriceFeed: %s", addresses[i].priceFeed);
+            console.log("CollateralConfig: %s", addresses[i].collateralConfig);
+            console.log("CollSurplusPool: %s", addresses[i].collSurplusPool);
+            console.log("TroveManager: %s", addresses[i].troveManager);
+        }
 
         EthosDataAggregator aggregator = new EthosDataAggregator(
-            cfg.priceFeed,
-            cfg.collateralConfig,
-            cfg.collSurplusPool,
-            cfg.troveManager
+            addresses
         );
 
         console.log("Aggregator deployed at: %s", address(aggregator));
