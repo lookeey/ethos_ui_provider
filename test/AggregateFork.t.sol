@@ -25,6 +25,8 @@ contract AggregatorForkTest is Test {
             /* cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager */
             addresses
         );
+        
+        aggregator.addAddresses(addresses[0]);
 
         (EthosDataAggregator.GlobalData memory globalData, EthosDataAggregator.CollData[] memory collData) =
             aggregator.getGlobalData(version);

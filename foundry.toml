@@ -5,6 +5,7 @@ libs = ["lib"]
 fs_permissions = [{ access = "read", path = "./"}]
 via_ir = true
 remappings = ["openzeppelin/=lib/openzeppelin-contracts/"]
+optimizer_runs = 1
 
 rpc_endpoints = { mantle = "https://rpc.ankr.com/mantle", optimism = "https://go.getblock.io/bec4b0dd7017435c8880f2cae8ea2d4d" }
 

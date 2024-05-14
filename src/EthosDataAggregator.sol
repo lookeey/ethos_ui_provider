@@ -57,6 +57,10 @@ contract EthosDataAggregator is Ownable {
         addresses = _addresses;
     }
 
+    function addAddresses(Addresses memory _addresses) external onlyOwner {
+        addresses.push(_addresses);
+    }
+
     function getGlobalData(uint version) external view returns (GlobalData memory, CollData[] memory) {
         Addresses memory addrs = addresses[version];
         IPriceFeed priceFeed = IPriceFeed(addrs.priceFeed);

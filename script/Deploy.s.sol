@@ -19,7 +19,6 @@ contract DeployScript is Script {
             (EthosDataAggregator.Addresses[])
         );
 
-        vm.broadcast();
 
         console.log("Deploying EthosDataAggregator with the following addresses:");
         /* console.log("PriceFeed: %s", cfg.priceFeed);
@@ -34,9 +33,14 @@ contract DeployScript is Script {
             console.log("TroveManager: %s", addresses[i].troveManager);
         }
 
+        
+        vm.startBroadcast();
+
         EthosDataAggregator aggregator = new EthosDataAggregator(
             addresses
         );
+
+        vm.stopBroadcast();
 
         console.log("Aggregator deployed at: %s", address(aggregator));
     }
