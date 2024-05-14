@@ -14,31 +14,9 @@ contract DeployScript is Script {
     function run(
         string memory deployment
     ) public {
-        EthosDataAggregator.Addresses[] memory addresses = abi.decode(
-            vm.parseJson(configs, string.concat(deployment, ".versions")),
-            (EthosDataAggregator.Addresses[])
-        );
-
-
-        console.log("Deploying EthosDataAggregator with the following addresses:");
-        /* console.log("PriceFeed: %s", cfg.priceFeed);
-        console.log("CollateralConfig: %s", cfg.collateralConfig);
-        console.log("CollSurplusPool: %s", cfg.collSurplusPool);
-        console.log("TroveManager: %s", cfg.troveManager); */
-        for (uint256 i = 0; i < addresses.length; i++) {
-            console.log("Version: %s", i);
-            console.log("PriceFeed: %s", addresses[i].priceFeed);
-            console.log("CollateralConfig: %s", addresses[i].collateralConfig);
-            console.log("CollSurplusPool: %s", addresses[i].collSurplusPool);
-            console.log("TroveManager: %s", addresses[i].troveManager);
-        }
-
-        
         vm.startBroadcast();
 
-        EthosDataAggregator aggregator = new EthosDataAggregator(
-            addresses
-        );
+        EthosDataAggregator aggregator = new EthosDataAggregator();
 
         vm.stopBroadcast();
 

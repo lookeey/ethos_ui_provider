@@ -4,10 +4,23 @@ pragma solidity ^0.8.13;
 import {Test, console} from "forge-std/Test.sol";
 import {EthosDataAggregator} from "src/EthosDataAggregator.sol";
 
+import {IPriceFeed} from "src/interfaces/IPriceFeed.sol";
+import {ICollateralConfig} from "src/interfaces/ICollateralConfig.sol";
+import {ICollSurplusPool} from "src/interfaces/ICollSurplusPool.sol";
+import {ITroveManager} from "src/interfaces/ITroveManager.sol";
+import {IActivePool} from "src/interfaces/IActivePool.sol";
+
 contract AggregatorForkTest is Test {
     EthosDataAggregator aggregator;
 
     string configs;
+
+    struct Addresses {
+        ICollSurplusPool collSurplusPool;
+        ICollateralConfig collateralConfig;
+        IPriceFeed priceFeed;
+        ITroveManager troveManager;
+    }
 
     function setUp() public {
         configs = vm.readFile("./test/deployments.json");
@@ -16,20 +29,20 @@ contract AggregatorForkTest is Test {
     function getGlobalData(string memory deployment, uint version) internal {
         // Config memory cfg = abi.decode(vm.parseJson(configs, deployment), (Config));
 
-        EthosDataAggregator.Addresses[] memory addresses = abi.decode(
+        Addresses[] memory addresses = abi.decode(
             vm.parseJson(configs, string.concat(deployment, ".versions")),
-            (EthosDataAggregator.Addresses[])
+            (Addresses[])
         );
 
-        aggregator = new EthosDataAggregator(
-            /* cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager */
-            addresses
-        );
-        
-        aggregator.addAddresses(addresses[0]);
+        aggregator = new EthosDataAggregator();
 
         (EthosDataAggregator.GlobalData memory globalData, EthosDataAggregator.CollData[] memory collData) =
-            aggregator.getGlobalData(version);
+            aggregator.getGlobalData(
+                addresses[version].collSurplusPool,
+                addresses[version].collateralConfig,
+                addresses[version].priceFeed,
+                addresses[version].troveManager
+            );
 
         console.log("Collateral Data:");
         for (uint256 i = 0; i < collData.length; i++) {
@@ -50,19 +63,21 @@ contract AggregatorForkTest is Test {
     }
 
     function getUserData(string memory deployment, uint version) internal {
-        EthosDataAggregator.Addresses[] memory addresses = abi.decode(
+        Addresses[] memory addresses = abi.decode(
             vm.parseJson(configs, string.concat(deployment, ".versions")),
-            (EthosDataAggregator.Addresses[])
+            (Addresses[])
         );
 
-        aggregator = new EthosDataAggregator(
-            /* cfg.priceFeed, cfg.collateralConfig, cfg.collSurplusPool, cfg.troveManager */
-            addresses
-        );
+        aggregator = new EthosDataAggregator();
 
         address user = abi.decode(vm.parseJson(configs, string.concat(deployment, ".testUser")), (address));
 
-        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(user, version);
+        (EthosDataAggregator.UserCollData[] memory userData) = aggregator.getUserData(
+            user,
+            addresses[version].collSurplusPool,
+            addresses[version].collateralConfig,
+            addresses[version].troveManager
+        );
 
         console.log("User Data:");
         for (uint256 i = 0; i < userData.length; i++) {

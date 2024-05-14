@@ -8,86 +8,61 @@ import {ITroveManager} from "./interfaces/ITroveManager.sol";
 import {IAggregatorV3} from "./interfaces/IAggregatorV3.sol";
 import {IActivePool} from "./interfaces/IActivePool.sol";
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
-import {Ownable} from "openzeppelin/contracts/access/Ownable.sol";
 
-contract EthosDataAggregator is Ownable {
-    // Storage Structs
-    struct Addresses {
-        address collSurplusPool;
-        address collateralConfig;
-        address priceFeed;
-        address troveManager;
-    }
-
+contract EthosDataAggregator {
     // Data structs
     struct CollData {
         address collateral;
-        uint minCollateralRatio;
-        uint criticalCollateralRatio;
-        uint price;
-        uint totalCollateralRatio;
-        uint entireSystemCollateral;
-        uint entireSystemDebt;
-        uint decimals;
-        uint priceDecimals;
+        uint256 minCollateralRatio;
+        uint256 criticalCollateralRatio;
+        uint256 price;
+        uint256 totalCollateralRatio;
+        uint256 entireSystemCollateral;
+        uint256 entireSystemDebt;
+        uint256 decimals;
+        uint256 priceDecimals;
         address yieldGenerator;
     }
 
     struct GlobalData {
-        uint liquidationReserve;
-        uint minNetDebt;
-        uint borrowingRate;
+        uint256 liquidationReserve;
+        uint256 minNetDebt;
+        uint256 borrowingRate;
     }
 
     struct UserCollData {
         address collateral;
-        uint troveStatus;
-        uint troveDebt;
-        uint troveCollDeposited;
-        uint claimableColl;
+        uint256 troveStatus;
+        uint256 troveDebt;
+        uint256 troveCollDeposited;
+        uint256 claimableColl;
     }
 
-    Addresses[] public addresses;
-
-    constructor(Addresses[] memory _addresses) Ownable(msg.sender) {
-        addresses = _addresses;
-    }
-
-    function setAddresses(Addresses[] memory _addresses) external onlyOwner {
-        addresses = _addresses;
-    }
-
-    function addAddresses(Addresses memory _addresses) external onlyOwner {
-        addresses.push(_addresses);
-    }
-
-    function getGlobalData(uint version) external view returns (GlobalData memory, CollData[] memory) {
-        Addresses memory addrs = addresses[version];
-        IPriceFeed priceFeed = IPriceFeed(addrs.priceFeed);
-        ICollateralConfig collateralConfig = ICollateralConfig(addrs.collateralConfig);
-        ICollSurplusPool collSurplusPool = ICollSurplusPool(addrs.collSurplusPool);
-        ITroveManager troveManager = ITroveManager(addrs.troveManager);
-
+    function getGlobalData(ICollSurplusPool collSurplusPool, ICollateralConfig collateralConfig, IPriceFeed priceFeed, ITroveManager troveManager)
+        external
+        view
+        returns (GlobalData memory, CollData[] memory)
+    {
         address[] memory collAddrs = collateralConfig.getAllowedCollaterals();
         CollData[] memory collateralData = new CollData[](collAddrs.length);
-        for (uint i = 0; i < collAddrs.length; i++) {
+        for (uint256 i = 0; i < collAddrs.length; i++) {
             address collAddr = collAddrs[i];
-            (int price, uint priceDecimals) = tryFetchPrice(collAddr, priceFeed);
+            (int256 price, uint256 priceDecimals) = tryFetchPrice(collAddr, priceFeed);
             IActivePool activePool = IActivePool(collSurplusPool.activePoolAddress());
 
-            uint fixedDecimalsPrice;
+            uint256 fixedDecimalsPrice;
             if (priceDecimals > 18) {
-                fixedDecimalsPrice = uint(price) / (10 ** (priceDecimals - 18));
+                fixedDecimalsPrice = uint256(price) / (10 ** (priceDecimals - 18));
             } else {
-                fixedDecimalsPrice = uint(price) * (10 ** (18 - priceDecimals));
+                fixedDecimalsPrice = uint256(price) * (10 ** (18 - priceDecimals));
             }
 
             collateralData[i] = CollData({
                 collateral: collAddr,
                 minCollateralRatio: collateralConfig.getCollateralMCR(collAddr),
                 criticalCollateralRatio: collateralConfig.getCollateralCCR(collAddr),
-                price: uint(fixedDecimalsPrice),
-                totalCollateralRatio: troveManager.getTCR(collAddr, uint(price)),
+                price: uint256(fixedDecimalsPrice),
+                totalCollateralRatio: troveManager.getTCR(collAddr, uint256(price)),
                 entireSystemCollateral: troveManager.getEntireSystemColl(collAddr),
                 entireSystemDebt: troveManager.getEntireSystemDebt(collAddr),
                 yieldGenerator: activePool.yieldGenerator(collAddr),
@@ -105,16 +80,11 @@ contract EthosDataAggregator is Ownable {
         return (globalData, collateralData);
     }
 
-    function getUserData(address _user, uint version) external view returns (UserCollData[] memory) {
-        Addresses memory addrs = addresses[version];
-        ICollSurplusPool collSurplusPool = ICollSurplusPool(addrs.collSurplusPool);
-        ITroveManager troveManager = ITroveManager(addrs.troveManager);
-        ICollateralConfig collateralConfig = ICollateralConfig(addrs.collateralConfig);
-
+    function getUserData(address _user, ICollSurplusPool collSurplusPool, ICollateralConfig collateralConfig, ITroveManager troveManager) external view returns (UserCollData[] memory) {
         address[] memory collAddrs = collateralConfig.getAllowedCollaterals();
 
         UserCollData[] memory userCollData = new UserCollData[](collAddrs.length);
-        for (uint i = 0; i < collAddrs.length; i++) {
+        for (uint256 i = 0; i < collAddrs.length; i++) {
             address collAddr = collAddrs[i];
             userCollData[i] = UserCollData({
                 collateral: collAddr,
@@ -127,12 +97,17 @@ contract EthosDataAggregator is Ownable {
         return userCollData;
     }
 
-    function tryFetchPrice(address _collateral, IPriceFeed _priceFeed) public view returns (int price, uint aggrDecimals) {
+    function tryFetchPrice(address _collateral, IPriceFeed _priceFeed)
+        public
+        view
+        returns (int256 price, uint256 aggrDecimals)
+    {
         IAggregatorV3 priceAggregator = _priceFeed.priceAggregator(_collateral);
         aggrDecimals = priceAggregator.decimals();
-        (bool success, bytes memory data) = address(priceAggregator).staticcall(abi.encodeWithSelector(priceAggregator.latestAnswer.selector));
+        (bool success, bytes memory data) =
+            address(priceAggregator).staticcall(abi.encodeWithSelector(priceAggregator.latestAnswer.selector));
         if (success) {
-            (price) = abi.decode(data, (int));
+            (price) = abi.decode(data, (int256));
             return (price, aggrDecimals);
         }
         (, price,,,) = priceAggregator.latestRoundData();
